@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Budget Tracker</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    --bg: #0f1020;
+    --panel: #1a1b33;
+    --panel-2: #23244a;
+    --text: #eef0ff;
+    --muted: #8f93c4;
+    --accent: #7c5cff;
+    --accent-2: #22d3ee;
+    --good: #34d399;
+    --bad: #fb7185;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background:
+      radial-gradient(900px 500px at 10% -10%, rgba(124, 92, 255, 0.25), transparent 60%),
+      radial-gradient(700px 400px at 100% 0%, rgba(34, 211, 238, 0.15), transparent 60%),
+      var(--bg);
+    color: var(--text);
+  }
+
+  header {
+    padding: 28px 16px 8px;
+    text-align: center;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 1.7rem;
+    letter-spacing: 0.5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  header p { margin: 6px 0 0; color: var(--muted); font-size: 0.9rem; }
+
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 580px;
+    margin: 0 auto;
+    padding: 16px 16px 28px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  .card h2 { margin: 0 0 14px; font-size: 1rem; color: var(--text); }
+
+  label { display: block; margin-bottom: 8px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1rem;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid transparent;
+    border-radius: 12px;
+  }
+
+  input[type="text"]::placeholder { color: #6b6f9e; }
+  input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.25); }
+  input[type="text"]:disabled { background: transparent; color: var(--text); border-color: rgba(255, 255, 255, 0.06); }
+  input.invalid { border-color: var(--bad); }
+
+  #salary { font-size: 1.5rem; font-weight: 600; }
+
+  .expense-row {
+    display: grid;
+    grid-template-columns: 1fr 110px auto auto;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: center;
+    padding: 8px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border-left: 4px solid var(--muted);
+  }
+
+  .expense-row.saved { border-left-color: var(--good); background: rgba(52, 211, 153, 0.06); }
+
+  button {
+    padding: 11px 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.1s ease, opacity 0.15s ease;
+  }
+
+  button:active { transform: scale(0.97); }
+
+  .btn-save { background: linear-gradient(135deg, var(--accent), #5b8cff); color: #fff; }
+  .btn-save.edit { background: var(--panel-2); color: var(--text); }
+  .btn-remove { background: transparent; color: var(--bad); padding: 11px 8px; }
+  .btn-add {
+    width: 100%;
+    margin-top: 6px;
+    background: transparent;
+    color: var(--accent-2);
+    border: 1.5px dashed rgba(34, 211, 238, 0.5);
+  }
+  .btn-add:hover { background: rgba(34, 211, 238, 0.08); }
+
+  .empty { color: var(--muted); font-size: 0.9rem; text-align: center; margin: 10px 0; }
+
+  footer {
+    position: sticky;
+    bottom: 0;
+    padding: 14px 16px 18px;
+    background: linear-gradient(180deg, rgba(15, 16, 32, 0), var(--bg) 35%);
+  }
+
+  .footer-inner {
+    max-width: 580px;
+    margin: 0 auto;
+    padding: 16px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #2a2c5e, #1a1b33);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .totals {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    text-align: center;
+  }
+
+  .totals .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .totals .value { font-size: 1.1rem; font-weight: 700; margin-top: 4px; }
+  .totals .value.negative { color: var(--bad); }
+  .totals .value.positive { color: var(--good); }
+
+  .progress-track {
+    height: 8px;
+    margin-top: 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent-2), var(--accent));
+    transition: width 0.35s ease, background 0.2s ease;
+  }
+
+  .progress-fill.over { background: var(--bad); }
+
+  .progress-text { margin-top: 6px; text-align: right; font-size: 0.75rem; color: var(--muted); }
+
+  @media (max-width: 480px) {
+    .expense-row { grid-template-columns: 1fr 90px auto auto; }
+  }
+</style>
+</head>
+<body>
+<script>
+  // ---------- State ----------
+  const expenses = []; // { id, amount, saved }
+  let nextId = 1;
+
+  // ---------- Helpers ----------
+  function parseAmount(text) {
+    const cleaned = String(text).replace(/,/g, "").trim();
+    if (cleaned === "") return NaN;
+    return Number(cleaned);
+  }
+
+  function formatMoney(n) {
+    return n.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  // Small wrapper around createElement + appendChild
+  function el(tag, props, children) {
+    const node = document.createElement(tag);
+    Object.assign(node, props || {});
+    (children || []).forEach(function (child) {
+      node.appendChild(child);
+    });
+    return node;
+  }
+
+  // ---------- Header ----------
+  const header = document.createElement("header");
+  const title = el("h1", { textContent: "Budget Tracker" });
+  const subtitle = el("p", { textContent: "Track where your money goes" });
+  header.appendChild(title);
+  header.appendChild(subtitle);
+  document.body.appendChild(header);
+
+  // ---------- Main ----------
+  const main = document.createElement("main");
+  document.body.appendChild(main);
+
+  // Total amount (salary) card
+  const salaryCard = el("section", { className: "card" });
+  const salaryLabel = el("label", { textContent: "Total amount (e.g. salary)", htmlFor: "salary" });
+  const salaryInput = el("input", {
+    type: "text",
+    id: "salary",
+    placeholder: "0.00",
+    inputMode: "decimal",
+    autocomplete: "off"
+  });
+  salaryCard.appendChild(salaryLabel);
+  salaryCard.appendChild(salaryInput);
+  main.appendChild(salaryCard);
+
+  // Expenses card
+  const expenseCard = el("section", { className: "card" });
+  const expenseTitle = el("h2", { textContent: "Expenses" });
+  const expenseList = el("div", { id: "expense-list" });
+  const addButton = el("button", { className: "btn-add", textContent: "+ Add expense", type: "button" });
+  expenseCard.appendChild(expenseTitle);
+  expenseCard.appendChild(expenseList);
+  expenseCard.appendChild(addButton);
+  main.appendChild(expenseCard);
+
+  // ---------- Footer ----------
+  const footer = document.createElement("footer");
+  const footerInner = el("div", { className: "footer-inner" });
+  const totals = el("div", { className: "totals" });
+
+  function createTotalBlock(labelText) {
+    const block = document.createElement("div");
+    const label = el("div", { className: "label", textContent: labelText });
+    const value = el("div", { className: "value", textContent: "0.00" });
+    block.appendChild(label);
+    block.appendChild(value);
+    totals.appendChild(block);
+    return value;
+  }
+
+  const totalValue = createTotalBlock("Total amount");
+  const spentValue = createTotalBlock("Total expenses");
+  const remainingValue = createTotalBlock("Remaining");
+
+  const progressTrack = el("div", { className: "progress-track" });
+  const progressFill = el("div", { className: "progress-fill" });
+  progressTrack.appendChild(progressFill);
+  const progressText = el("div", { className: "progress-text", textContent: "0% spent" });
+
+  footerInner.appendChild(totals);
+  footerInner.appendChild(progressTrack);
+  footerInner.appendChild(progressText);
+  footer.appendChild(footerInner);
+  document.body.appendChild(footer);
+
+  // ---------- Footer update ----------
+  function updateFooter() {
+    const total = parseAmount(salaryInput.value);
+    const totalAmount = isNaN(total) ? 0 : total;
+
+    const spent = expenses.reduce(function (sum, e) {
+      return e.saved ? sum + e.amount : sum;
+    }, 0);
+
+    const remaining = totalAmount - spent;
+
+    totalValue.textContent = formatMoney(totalAmount);
+    spentValue.textContent = formatMoney(spent);
+    remainingValue.textContent = formatMoney(remaining);
+    remainingValue.className = "value " + (remaining < 0 ? "negative" : "positive");
+
+    let percent = 0;
+    if (totalAmount > 0) percent = (spent / totalAmount) * 100;
+    else if (spent > 0) percent = 100;
+
+    progressFill.style.width = Math.min(100, percent) + "%";
+    progressFill.classList.toggle("over", percent > 100);
+    progressText.textContent = Math.round(percent) + "% spent";
+  }
+
+  // ---------- Empty message ----------
+  const emptyMessage = el("p", { className: "empty", textContent: "No expenses yet." });
+
+  function refreshEmptyMessage() {
+    if (expenses.length === 0) {
+      if (!emptyMessage.parentNode) expenseList.appendChild(emptyMessage);
+    } else if (emptyMessage.parentNode) {
+      expenseList.removeChild(emptyMessage);
+    }
+  }
+
+  // ---------- Expense rows ----------
+  function createExpenseRow() {
+    const expense = { id: nextId++, amount: 0, saved: false };
+    expenses.push(expense);
+
+    const row = el("div", { className: "expense-row" });
+
+    const nameInput = el("input", {
+      type: "text",
+      placeholder: "Expense name",
+      autocomplete: "off"
+    });
+
+    const amountInput = el("input", {
+      type: "text",
+      placeholder: "Amount",
+      inputMode: "decimal",
+      autocomplete: "off"
+    });
+
+    const saveButton = el("button", { className: "btn-save", textContent: "Save", type: "button" });
+    const removeButton = el("button", {
+      className: "btn-remove",
+      textContent: "\u2715",
+      type: "button",
+      title: "Remove"
+    });
+
+    row.appendChild(nameInput);
+    row.appendChild(amountInput);
+    row.appendChild(saveButton);
+    row.appendChild(removeButton);
+
+    function save() {
+      const amount = parseAmount(amountInput.value);
+      const nameOk = nameInput.value.trim() !== "";
+      const amountOk = !isNaN(amount) && amount > 0;
+
+      nameInput.classList.toggle("invalid", !nameOk);
+      amountInput.classList.toggle("invalid", !amountOk);
+      if (!nameOk || !amountOk) return;
+
+      expense.amount = amount;
+      expense.saved = true;
+
+      nameInput.disabled = true;
+      amountInput.disabled = true;
+      saveButton.textContent = "Edit";
+      saveButton.classList.add("edit");
+      row.classList.add("saved");
+
+      updateFooter();
+    }
+
+    function edit() {
+      expense.saved = false;
+
+      nameInput.disabled = false;
+      amountInput.disabled = false;
+      saveButton.textContent = "Save";
+      saveButton.classList.remove("edit");
+      row.classList.remove("saved");
+      nameInput.focus();
+
+      updateFooter();
+    }
+
+    saveButton.addEventListener("click", function () {
+      if (expense.saved) {
+        edit();
+      } else {
+        save();
+      }
+    });
+
+    removeButton.addEventListener("click", function () {
+      const index = expenses.indexOf(expense);
+      if (index !== -1) expenses.splice(index, 1);
+      expenseList.removeChild(row);
+      refreshEmptyMessage();
+      updateFooter();
+    });
+
+    [nameInput, amountInput].forEach(function (input) {
+      input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") save();
+      });
+    });
+
+    expenseList.appendChild(row);
+    refreshEmptyMessage();
+    nameInput.focus();
+  }
+
+  // ---------- Events ----------
+  addButton.addEventListener("click", createExpenseRow);
+  salaryInput.addEventListener("input", updateFooter);
+
+  // ---------- Init ----------
+  refreshEmptyMessage();
+  updateFooter();
+  createExpenseRow();
+  salaryInput.focus();
+</script>
+</body>
+</html>
